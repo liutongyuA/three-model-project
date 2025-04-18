@@ -1,11 +1,17 @@
 <template>
     <el-tabs v-model="activeName" class="demo-tabs">
       <el-tab-pane label="布点模型" name="1">
-        <three-loader v-if="activeName == 1"/>
+        <three-loader v-if="activeName == '1'"/>
       </el-tab-pane>
-      <el-tab-pane label="Config" name="2">Config</el-tab-pane>
-      <el-tab-pane label="Role" name="3">Role</el-tab-pane>
-      <el-tab-pane label="Task" name="4">Task</el-tab-pane>
+      <el-tab-pane label="Config" name="2">
+        <three />
+      </el-tab-pane>
+      <el-tab-pane label="Role" name="3">
+        <three-loader-fbx />
+      </el-tab-pane>
+      <el-tab-pane label="Task" name="4">
+        <poject />
+      </el-tab-pane>
     </el-tabs>
     <!-- <three /> -->
    

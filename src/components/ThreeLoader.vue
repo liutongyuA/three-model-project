@@ -1,10 +1,11 @@
 <template>
   <div ref="canvas" class="canvas"></div>
+  <!-- css3标签 -->
   <div id="tag" style="backface-visibility: hidden;">标签内容</div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, nextTick } from 'vue'
 import * as THREE from 'three';
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GUI } from "three/examples/jsm/libs/lil-gui.module.min.js"
@@ -13,9 +14,8 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js"//加载模
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js"//解压器
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import gsap from "gsap";
-// import { CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer" // 二维标签渲染器
-import { CSS3DRenderer } from "three/examples/jsm/renderers/CSS3DRenderer" // 三维标签渲染器
-import { CSS3DObject } from 'three/addons/renderers/CSS3DRenderer.js';
+import { CSS2DRenderer, CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer" // 二维标签渲染器
+import { CSS3DRenderer, CSS3DObject } from "three/examples/jsm/renderers/CSS3DRenderer" // 三维标签渲染器
 import { CSS3DSprite } from 'three/addons/renderers/CSS3DRenderer.js';
 let camera 
 let renderer
@@ -23,22 +23,29 @@ let controls
 let axesHelper
 let labelRenderer // 二维标签
 let css3DRenderer  // 三维标签
-const scene = new THREE.Scene()
-//创建场景雾
-// scene.fog = new THREE.Fog(0x999999, 0.1, 50 )
-// scene.background = new THREE.Color(0x999999)
+let scene
 const canvas = ref()
 
 onMounted(()=>{
+ nextTick(()=>{
+  initScene()
   initCamera()
   initRenderer()
   initControl()
   initGui()
   renderDom()
-  // loaderModel()
-  addCss3Label()
+  loaderModel()
+  // loadCameraPositions()
+  //标记标注（圆锥案例）
+  // addCss3Label()
+ })
 })
-
+const initScene = ()=>{
+  scene = new THREE.Scene()
+  //创建场景雾
+  // scene.fog = new THREE.Fog(0x999999, 0.1, 50 )
+  // scene.background = new THREE.Color(0x999999)
+}
 
 const initRenderer = ()=>{
   renderer = new THREE.WebGLRenderer()
@@ -48,13 +55,14 @@ const initRenderer = ()=>{
   // 使用渲染器，通过相机将场景渲染进来
   renderer.render(scene, camera);
  
-  // labelRenderer = new CSS2DRenderer() // 标签渲染器
-  // labelRenderer.domElement.style.zIndex = 2
-  // labelRenderer.domElement.style.position = 'absolute'
-  // labelRenderer.domElement.style.top = '0px'
-  // labelRenderer.domElement.style.left = '0px'
-  // labelRenderer.domElement.style.pointerEvents = 'none'// 避免HTML标签遮挡三维场景的鼠标事件
-  // canvas.value.appendChild(labelRenderer.domElement)
+  labelRenderer = new CSS2DRenderer() // 标签渲染器
+  labelRenderer.domElement.style.zIndex = 2
+  labelRenderer.domElement.style.position = 'absolute'
+  labelRenderer.domElement.style.top = '0px'
+  labelRenderer.domElement.style.left = '0px'
+  labelRenderer.domElement.style.pointerEvents = 'none'// 避免HTML标签遮挡三维场景的鼠标事件
+  canvas.value.appendChild(labelRenderer.domElement)
+  labelRenderer.setSize(canvas.value.clientWidth, canvas.value.clientHeight) // 设置标签渲染器的尺寸
 
   css3DRenderer = new CSS3DRenderer() // 标签渲染器
   css3DRenderer.domElement.style.zIndex = 0
@@ -112,16 +120,11 @@ const renderDom = ()=>{
   renderer.render(scene, camera);
   //渲染下一帧的时候就会调用render函数
   requestAnimationFrame(renderDom);
-  // labelRenderer.render(scene, camera) // 渲染2d标签场景
+  labelRenderer.render(scene, camera) // 渲染2d标签场景
   css3DRenderer.render(scene, camera) // 渲染3d标签场景
 }
 
 const addCss3Label = ()=>{
-  // const div = document.createElement('div');
-  // div.innerText = '为啥'
-  // div.style.border = "1px solid"
-  // div.style.height = "160px"
-  // div.style.width = "160px"
   // HTML元素转化为threejs的CSS3模型对象
   const div = document.getElementById('tag');
   const tag = new CSS3DObject(div);
@@ -190,7 +193,8 @@ const loaderModel = ()=>{
   ];
   glbModels.forEach((modelPath) => {
   gltfLoader.load(modelPath,(gltf)=>{
-    scene.add(gltf.scene)
+    const model = gltf.scene
+    scene.add(model)
   })
   })
   //解压
@@ -225,11 +229,78 @@ const loaderModel = ()=>{
   scene.add( light );
 
 }
-//鼠标点击标记
 
-// document.addEventListener("click", (e)=>{
-//   modelOnClick(e, scene)
-// })
+const createCameraIcon =(type)=>{
+  if(type == "3D"){
+    let cameraIconModel;
+    // 预加载摄像头图标模型(3D)
+    const gltfLoader = new GLTFLoader()
+    gltfLoader.load('camera_icon.gltf', (gltf) => {
+      cameraIconModel = gltf.scene;
+      cameraIconModel.scale.set(0.1, 0.1, 0.1);
+      cameraIconModel.userData.isCamera = true;
+      return cameraIconModel
+    });
+  }else{
+    const texLoader= new THREE.TextureLoader();
+    const texture = texLoader.load("/image/摄像头.png");
+    const spriteMaterial = new THREE.SpriteMaterial({
+      map: texture,
+    });
+    const sprite = new THREE.Sprite(spriteMaterial);
+    sprite.userData.isCamera = true;
+    return sprite
+  }
+  
+}
+const addCameraLabel = (cameraIcon)=>{
+  const labelDiv = document.createElement('div');
+  labelDiv.className = 'camera-label';
+  labelDiv.textContent = "摄像头";
+  labelDiv.style.color = 'white';
+  labelDiv.style.backgroundColor = 'rgba(0,0,0,0.7)';
+  labelDiv.style.padding = '5px 10px';
+  labelDiv.style.borderRadius = '5px';
+  labelDiv.style.pointerEvents = 'none';
+  const label = new CSS2DObject(labelDiv);
+  label.position.set(0, 2, 0); // 在图标上方
+  cameraIcon.add(label);
+}
+//保存和加载摄像头位置
+const saveCameraPositions= () =>{
+  const cameras = [];
+  scene.traverse((obj) => {
+    if (obj.userData.isCamera) {
+      cameras.push({
+        position: { x: obj.position.x, y: obj.position.y, z: obj.position.z },
+        rotation: { x: obj.rotation.x, y: obj.rotation.y, z: obj.rotation.z }
+      });
+    }
+  });
+  
+  localStorage.setItem('cameraPositions', JSON.stringify(cameras));
+  console.log('摄像头位置已保存');
+}
+
+const loadCameraPositions =()=> {
+  const savedData = localStorage.getItem('cameraPositions');
+  if (!savedData) return;
+  
+  const cameras = JSON.parse(savedData);
+  cameras.forEach((camData) => {
+    const cameraIcon = createCameraIcon();
+    cameraIcon.position.set(camData.position.x, camData.position.y, camData.position.z);
+    cameraIcon.rotation.set(camData.rotation.x, camData.rotation.y, camData.rotation.z);
+    scene.add(cameraIcon);
+  });
+  
+  console.log('摄像头位置已加载');
+}
+
+//鼠标点击标记
+document.addEventListener("click", (e)=>{
+  modelOnClick(e, scene)
+})
 const modelOnClick = (event, object)=> {
   //获取容器相对视口的位置 从而获取鼠标点击位置基于容器的坐标
   const x = event.clientX - canvas.value.getBoundingClientRect().left
@@ -250,19 +321,27 @@ const modelOnClick = (event, object)=> {
     .copy(face.normal)
     .applyMatrix3(normalMatrix)
     .normalize();
-  // const normal = intersects[0].face.normal; // 获取法向量
-  // console.log(intersects[0].point, "选中的坐标2",normal);
+  const normal = intersects[0].face.normal; // 获取法向量
   // translateCamera(intersects[0].point, intersects[0].point)
-  // 创建球体并添加到场景中
-  const geometry = new THREE.SphereGeometry(0.5, 32, 32);
-  const material = new THREE.MeshBasicMaterial({ color: 'red' });
-  const sphere = new THREE.Mesh(geometry, material);
-  sphere.position.copy(point)
+
+  // 创建摄像头图标
+  let cameraIcon;
+  cameraIcon = createCameraIcon("2D");
+  // 使用3D模型
+  // cameraIcon = createCameraIcon("3D").clone()
+  // 设置位置和朝向
+  cameraIcon.position.copy(point);
+  // 使图标朝向法线方向（贴在表面上 3D时）
+  if (cameraIcon.isSprite) {
+    cameraIcon.lookAt(new THREE.Vector3().copy(point).add(normal));
+  }
   // 调整圆形物体的朝向，使其与墙壁表面对齐
-  // sphere.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), normal);
+  cameraIcon.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), normal);
   // 将圆形物体稍微向外偏移，避免穿透
-  sphere.position.addScaledVector(worldNormal, 0.5);
-  scene.add(sphere);
+  cameraIcon.position.addScaledVector(worldNormal, 0.5);
+  scene.add(cameraIcon);
+  // addCameraLabel(cameraIcon)
+  // saveCameraPositions()
 }
 // 使用补间动画移动相机
 let timeLine1 = gsap.timeline();
