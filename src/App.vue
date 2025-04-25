@@ -13,18 +13,12 @@
         <poject v-if="activeName == '4'"/>
       </el-tab-pane>
     </el-tabs>
-    <!-- <three /> -->
-   
-    <!-- <three-loader-fbx /> -->
-    <!-- 圣诞卡 -->
-    <!-- <poject /> -->
 </template>
 
 <script lang="ts" setup>
 import Three from "./components/Three.vue"
 import ThreeAsd from "./components/Three-asd.vue"
 import ThreeLoader from "./components/ThreeLoader.vue"
-import ThreeLoaderFbx from "./components/ThreeLoaderFbx.vue"
 import poject from "./components/poject.vue"
 import { ref } from "vue"
 const activeName = ref("2")
