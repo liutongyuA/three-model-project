@@ -3,136 +3,83 @@
 </template>
 
 <script setup >
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted, nextTick } from 'vue'
 import * as THREE from 'three';
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GUI } from "three/examples/jsm/libs/lil-gui.module.min.js"
 import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js"
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js"//加载模型
+const canvas = ref()
+onMounted(()=>{
+  nextTick(()=>{
 
-const scene = new THREE.Scene()
-const camera = new THREE.PerspectiveCamera(
-    40,
-    window.innerWidth / window.innerHeight,
-    0.1,
-    1000
-)
-// 设置相机位置
-camera.position.set(0, 0, 10);
-
-const renderer = new THREE.WebGLRenderer()
-renderer.setSize(window.innerWidth, window.innerHeight)
-document.body.appendChild(renderer.domElement)
-// 使用渲染器，通过相机将场景渲染进来
-renderer.render(scene, camera);
-
-
-
-  const gltfLoader = new GLTFLoader()
-  gltfLoader.load('./3d/毛细2.glb',(gltf)=>{
-    const model = gltf.scene
-   
-    scene.add(model)
-  })
-
-  const light = new THREE.AmbientLight( 0xffffff, 1);
-  scene.add( light );
-
-
-
-// 创建轨道控制器 设置阻尼 旋转
-const controls = new OrbitControls(camera, renderer.domElement);
-
-// 添加坐标轴辅助器
-const axesHelper = new THREE.AxesHelper(5);
-scene.add(axesHelper);
-
-function render() {
-  //如果后期需要控制器带有阻尼效果，或者自动旋转等效果，就需要加入controls.update()
-//   controls.update()
-  renderer.render(scene, camera);
-
-  //   渲染下一帧的时候就会调用render函数
-  requestAnimationFrame(render);
-}
-
-render();
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;//重置相机宽高比
-  camera.updateProjectionMatrix();//更新相机投影矩阵
-  renderer.setSize(window.innerWidth, window.innerHeight);//重置渲染器宽高比
-});
-//全屏
-// renderer.domElement.requestFullscreen(); 退出全屏 exitFullscreen()
-const obj = {
-  FullScreen: ()=>{
-    renderer.domElement.requestFullscreen();
-  }
-}
-
-//工具
-const gui = new GUI()
-
-// // 创建材质
-// const pipeLength = 5; // 管道长度
-// const pipeSegments = 32; // 管道分段数
-
-// // 创建垂直管道
-// const verticalPipe = new THREE.Mesh(
-//     new THREE.CylinderGeometry(pipeRadius, pipeRadius, pipeLength, pipeSegments),
-//     material
-// );
-// verticalPipe.position.y = pipeLength / 2; // 调整位置
-
-// // 创建水平管道
-// const horizontalPipe = new THREE.Mesh(
-//     new THREE.CylinderGeometry(pipeRadius, pipeRadius, pipeLength, pipeSegments),
-//     material
-// );
-// horizontalPipe.rotation.z = Math.PI / 2; // 旋转 90 度
-// horizontalPipe.position.x = pipeLength / 2; // 调整位置
-
-// // 创建直角弯头（使用立方体模拟）
-// const elbowSize = pipeRadius * 2; // 弯头尺寸
-// const elbow = new THREE.Mesh(
-//     new THREE.BoxGeometry(elbowSize, elbowSize, elbowSize),
-//     material
-// );
-// elbow.position.x = pipeLength / 2; // 调整位置
-// elbow.position.y = pipeLength / 2; // 调整位置
-
-// // 将管道和弯头添加到场景中
-// scene.add(verticalPipe);
-// scene.add(horizontalPipe);
-// scene.add(elbow);
-
-// // 设置相机位置
-// camera.position.set(10, 10, 10);
-// camera.lookAt(0, 0, 0);
-
-// // 渲染循环
-// function animate() {
-//     requestAnimationFrame(animate);
-
-//     // 旋转模型以便观察
-//     verticalPipe.rotation.y += 0.01;
-//     horizontalPipe.rotation.y += 0.01;
-//     elbow.rotation.y += 0.01;
-
-//     // 渲染场景
-//     renderer.render(scene, camera);
-// }
-
-// animate();
-// gui.add(obj,"FullScreen").name("全屏")
-// gui.add(cube.position,"x").min(-10).max(10).step(1).name("设置x轴").onChange(()=>{
-
-// })
-// gui.add(cubeMaterial, "wireframe").name("材质")
-// let folder = gui.addFolder("位置")
-// folder.add(cube.position,"y").min(-10).max(10).step(1).name("设置y轴").onFinshChange(()=>{
+    const scene = new THREE.Scene()
+    const camera = new THREE.PerspectiveCamera(
+        40,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000
+    )
+    // 设置相机位置
+    camera.position.set(0, 0, 10);
+    //创建渲染器
+    const renderer = new THREE.WebGLRenderer()
+    renderer.setSize(canvas.value.clientWidth, canvas.value.clientHeight)
+    canvas.value.appendChild(renderer.domElement)
+    // 使用渲染器，通过相机将场景渲染进来
+    renderer.render(scene, camera);
+    // 创建轨道控制器
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.autoRotate = true;
+    // 添加物体
+    const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);// 创建几何体
+    const cubeMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });// 创建材质
+    // 根据几何体和材质创建物体
+    const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+    // 修改物体的位置
+    // cube.position.set(3, 0, 0);
+    //添加到场景
+    scene.add(cube); 
+    
+    //渲染
+    function render() {
+      renderer.render(scene, camera);
+      //渲染下一帧的时候就会调用render函数
+      requestAnimationFrame(render);
+    }
+    render();
+    
+    // const light = new THREE.AmbientLight( 0xffffff, 1);
+    // scene.add( light );
+    // // 添加坐标轴辅助器
+    // const axesHelper = new THREE.AxesHelper(5);
+    // scene.add(axesHelper);
+    
+    window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;//重置相机宽高比
+    camera.updateProjectionMatrix();//更新相机投影矩阵
+    renderer.setSize(window.innerWidth, window.innerHeight);//重置渲染器宽高比
+    });
   
-// })
+    //全屏
+    // renderer.domElement.requestFullscreen(); 退出全屏 exitFullscreen()
+    const obj = {
+      FullScreen: ()=>{
+        renderer.domElement.requestFullscreen();
+      }
+    }
+    //工具
+    const gui = new GUI()
+  
+    gui.add(obj,"FullScreen").name("全屏")
+    gui.add(cube.position,"x").min(-10).max(10).step(1).name("设置x轴").onChange(()=>{
+  
+    })
+    gui.add(cubeMaterial, "wireframe").name("材质")
+    let folder = gui.addFolder("位置")
+    folder.add(cube.position,"y").min(-10).max(10).step(1).name("设置y轴")
+  })
+})
 
 // //加载纹理
 // let textureLoader = new THREE.TextureLoader()
@@ -171,7 +118,7 @@ const gui = new GUI()
 
 <style scoped>
 
-canvas {
+.canvas {
     width: 100vw;
     height: 100vh;
 }
