@@ -27,6 +27,7 @@ import ThreeAsd from "./components/Three-asd.vue"
 import ThreeLoader from "./components/ThreeLoader.vue"
 import poject from "./components/poject.vue"
 import ThreeModelViewer from "./components/ThreeModelViewer.vue"
+import ThreeModelBuilding from "./components/ThreeModelBuilding.vue"
 import { ref } from "vue"
 const activeName = ref("6")
 </script>
