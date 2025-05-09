@@ -13,6 +13,7 @@ import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js"
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js"//加载模型
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js"//解压器
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
+import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 import gsap from "gsap";
 import { CSS2DRenderer, CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer" // 二维标签渲染器
 import { CSS3DRenderer, CSS3DObject } from "three/examples/jsm/renderers/CSS3DRenderer" // 三维标签渲染器
@@ -38,6 +39,7 @@ onMounted(()=>{
   // loadCameraPositions()
   //标记标注（圆锥案例）
   // addCss3Label()
+  initClickListener()
  })
 })
 const initScene = ()=>{
@@ -298,9 +300,14 @@ const loadCameraPositions =()=> {
 }
 
 //鼠标点击标记
-document.addEventListener("click", (e)=>{
-  modelOnClick(e, scene)
-})
+
+const initClickListener = ()=>{
+  renderer.domElement.addEventListener("click", (event) => {
+    modelOnClick(event, scene)
+
+  })
+}
+
 const modelOnClick = (event, object)=> {
   //获取容器相对视口的位置 从而获取鼠标点击位置基于容器的坐标
   const x = event.clientX - canvas.value.getBoundingClientRect().left
